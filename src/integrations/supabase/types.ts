@@ -14,7 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      patient_profiles: {
+        Row: {
+          created_at: string
+          data_nascimento: string | null
+          estado_civil: string | null
+          expectativas: string | null
+          genero: string | null
+          historico_familiar: string | null
+          id: string
+          medicamentos: string | null
+          profissao: string | null
+          queixa_principal: string | null
+          tratamentos_anteriores: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_nascimento?: string | null
+          estado_civil?: string | null
+          expectativas?: string | null
+          genero?: string | null
+          historico_familiar?: string | null
+          id?: string
+          medicamentos?: string | null
+          profissao?: string | null
+          queixa_principal?: string | null
+          tratamentos_anteriores?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_nascimento?: string | null
+          estado_civil?: string | null
+          expectativas?: string | null
+          genero?: string | null
+          historico_familiar?: string | null
+          id?: string
+          medicamentos?: string | null
+          profissao?: string | null
+          queixa_principal?: string | null
+          tratamentos_anteriores?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nome_completo: string | null
+          onboarding_completed: boolean
+          role: Database["public"]["Enums"]["user_role"] | null
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_completo?: string | null
+          onboarding_completed?: boolean
+          role?: Database["public"]["Enums"]["user_role"] | null
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_completo?: string | null
+          onboarding_completed?: boolean
+          role?: Database["public"]["Enums"]["user_role"] | null
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      psychologist_profiles: {
+        Row: {
+          created_at: string
+          crp: string
+          especializacoes: string[] | null
+          id: string
+          trajetoria_profissional: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          crp: string
+          especializacoes?: string[] | null
+          id?: string
+          trajetoria_profissional?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          crp?: string
+          especializacoes?: string[] | null
+          id?: string
+          trajetoria_profissional?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +136,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "paciente" | "psicologo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +263,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["paciente", "psicologo"],
+    },
   },
 } as const
