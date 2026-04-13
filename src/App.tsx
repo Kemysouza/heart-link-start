@@ -9,6 +9,7 @@ import RoleSelect from "./pages/RoleSelect";
 import PsychologistOnboarding from "./pages/PsychologistOnboarding";
 import PatientOnboarding from "./pages/PatientOnboarding";
 import PsychologistDashboard from "./pages/PsychologistDashboard";
+import PsychologistPatients from "./pages/PsychologistPatients";
 import PatientDashboard from "./pages/PatientDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -46,6 +47,7 @@ const AppRoutes = () => {
       <Route path="/onboarding/psicologo" element={<ProtectedRoute><PsychologistOnboarding /></ProtectedRoute>} />
       <Route path="/onboarding/paciente" element={<ProtectedRoute><PatientOnboarding /></ProtectedRoute>} />
       <Route path="/dashboard/psicologo" element={<ProtectedRoute><PsychologistDashboard /></ProtectedRoute>} />
+      <Route path="/dashboard/psicologo/pacientes" element={<ProtectedRoute><PsychologistPatients /></ProtectedRoute>} />
       <Route path="/dashboard/paciente" element={<ProtectedRoute><PatientDashboard /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
