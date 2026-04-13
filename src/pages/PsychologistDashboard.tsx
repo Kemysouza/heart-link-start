@@ -147,13 +147,13 @@ const PsychologistDashboard = () => {
       if (existing) {
         const { error } = await supabase
           .from("consultations")
-          .update({ status })
+          .update({ status: status as "em_andamento" | "finalizado" | "cancelado" })
           .eq("id", existing.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("consultations")
-          .insert({ psychologist_id: user.id, patient_id: patientId, status });
+          .insert([{ psychologist_id: user.id, patient_id: patientId, status: status as "em_andamento" | "finalizado" | "cancelado" }]);
         if (error) throw error;
       }
       toast.success("Status atualizado!");
