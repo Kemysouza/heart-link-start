@@ -314,7 +314,7 @@ const PsychologistDashboard = () => {
 
         {/* Stats */}
         <div className="grid sm:grid-cols-3 gap-4 mb-8 animate-slide-up">
-          <Card className="shadow-card border-0">
+          <Card className="shadow-card border-0 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => document.getElementById('patients-table')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
