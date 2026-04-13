@@ -106,20 +106,21 @@ const PsychologistPatients = () => {
   const getConsultation = (patientId: string) =>
     consultations.find((c) => c.patient_id === patientId);
 
-  const upsertConsultation = async (patientId: string, data: Record<string, any>) => {
+  const upsertConsultation = async (patientId: string, data: any) => {
     if (!user) return;
     const existing = getConsultation(patientId);
     try {
       if (existing) {
         const { error } = await supabase
           .from("consultations")
-          .update(data)
+          .update(data as any)
           .eq("id", existing.id);
         if (error) throw error;
       } else {
+        const insertData = { psychologist_id: user.id, patient_id: patientId, ...data } as any;
         const { error } = await supabase
           .from("consultations")
-          .insert([{ psychologist_id: user.id, patient_id: patientId, ...data }]);
+          .insert([insertData]);
         if (error) throw error;
       }
       fetchData();
