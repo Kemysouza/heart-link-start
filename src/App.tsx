@@ -9,6 +9,7 @@ import RoleSelect from "./pages/RoleSelect";
 import PsychologistOnboarding from "./pages/PsychologistOnboarding";
 import PatientOnboarding from "./pages/PatientOnboarding";
 import PsychologistDashboard from "./pages/PsychologistDashboard";
+import PsychologistPatients from "./pages/PsychologistPatients";
 import PatientDashboard from "./pages/PatientDashboard";
 import NotFound from "./pages/NotFound";
 
