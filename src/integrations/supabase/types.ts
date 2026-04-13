@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      consultations: {
+        Row: {
+          created_at: string
+          id: string
+          next_appointment: string | null
+          notes: string | null
+          patient_id: string
+          payment: Database["public"]["Enums"]["payment_status"]
+          psychologist_id: string
+          status: Database["public"]["Enums"]["consultation_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          next_appointment?: string | null
+          notes?: string | null
+          patient_id: string
+          payment?: Database["public"]["Enums"]["payment_status"]
+          psychologist_id: string
+          status?: Database["public"]["Enums"]["consultation_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          next_appointment?: string | null
+          notes?: string | null
+          patient_id?: string
+          payment?: Database["public"]["Enums"]["payment_status"]
+          psychologist_id?: string
+          status?: Database["public"]["Enums"]["consultation_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       patient_profiles: {
         Row: {
           created_at: string
@@ -98,6 +134,27 @@ export type Database = {
         }
         Relationships: []
       }
+      psychologist_patients: {
+        Row: {
+          created_at: string
+          id: string
+          patient_id: string
+          psychologist_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_id: string
+          psychologist_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_id?: string
+          psychologist_id?: string
+        }
+        Relationships: []
+      }
       psychologist_profiles: {
         Row: {
           created_at: string
@@ -136,6 +193,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      consultation_status: "em_andamento" | "finalizado" | "cancelado"
+      payment_status: "pendente" | "pago" | "nao_pago"
       user_role: "paciente" | "psicologo"
     }
     CompositeTypes: {
@@ -264,6 +323,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      consultation_status: ["em_andamento", "finalizado", "cancelado"],
+      payment_status: ["pendente", "pago", "nao_pago"],
       user_role: ["paciente", "psicologo"],
     },
   },
