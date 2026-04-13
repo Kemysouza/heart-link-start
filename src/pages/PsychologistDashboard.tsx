@@ -199,7 +199,7 @@ const PsychologistDashboard = () => {
       } else {
         const { error } = await supabase
           .from("consultations")
-          .insert({ psychologist_id: user.id, patient_id: patientId, next_appointment: date || null });
+          .insert([{ psychologist_id: user.id, patient_id: patientId, next_appointment: date || null }]);
         if (error) throw error;
       }
       toast.success("Próxima consulta atualizada!");
