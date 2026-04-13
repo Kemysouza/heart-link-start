@@ -354,7 +354,7 @@ const PsychologistDashboard = () => {
         </div>
 
         {/* Patients Table */}
-        <Card className="shadow-card border-0 animate-slide-up">
+        <Card id="patients-table" className="shadow-card border-0 animate-slide-up">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" /> Pacientes
