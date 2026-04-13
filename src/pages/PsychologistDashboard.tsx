@@ -170,13 +170,13 @@ const PsychologistDashboard = () => {
       if (existing) {
         const { error } = await supabase
           .from("consultations")
-          .update({ payment })
+          .update({ payment: payment as "pendente" | "pago" | "nao_pago" })
           .eq("id", existing.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("consultations")
-          .insert({ psychologist_id: user.id, patient_id: patientId, payment });
+          .insert([{ psychologist_id: user.id, patient_id: patientId, payment: payment as "pendente" | "pago" | "nao_pago" }]);
         if (error) throw error;
       }
       toast.success("Pagamento atualizado!");
