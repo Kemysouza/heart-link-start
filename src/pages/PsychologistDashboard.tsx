@@ -124,11 +124,11 @@ const PsychologistDashboard = () => {
       } else {
         const { error } = await supabase
           .from("consultations")
-          .insert({
+          .insert([{
             psychologist_id: user.id,
             patient_id: notesPatientId,
             notes: newNote,
-          });
+          }]);
         if (error) throw error;
       }
       toast.success("Anotação salva!");
