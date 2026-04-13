@@ -1,10 +1,12 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Calendar, Heart, BookOpen, LogOut, Search } from "lucide-react";
 
 const PatientDashboard = () => {
   const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
@@ -40,12 +42,12 @@ const PatientDashboard = () => {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-slide-up">
           {[
-            { icon: Calendar, label: "Consultas", value: "0", desc: "Agendadas" },
-            { icon: Search, label: "Psicólogos", value: "—", desc: "Encontrar" },
-            { icon: Heart, label: "Bem-estar", value: "—", desc: "Registros" },
-            { icon: BookOpen, label: "Diário", value: "0", desc: "Entradas" },
-          ].map(({ icon: Icon, label, value, desc }) => (
-            <Card key={label} className="shadow-card border-0 cursor-pointer hover:shadow-elevated transition-shadow">
+            { icon: Calendar, label: "Consultas", value: "0", desc: "Agendadas", onClick: undefined },
+            { icon: Search, label: "Psicólogos", value: "—", desc: "Encontrar", onClick: () => navigate("/dashboard/paciente/psicologos") },
+            { icon: Heart, label: "Bem-estar", value: "—", desc: "Registros", onClick: undefined },
+            { icon: BookOpen, label: "Diário", value: "0", desc: "Entradas", onClick: undefined },
+          ].map(({ icon: Icon, label, value, desc, onClick }) => (
+            <Card key={label} className={`shadow-card border-0 cursor-pointer hover:shadow-elevated hover:scale-[1.02] transition-all duration-200`} onClick={onClick}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
@@ -54,6 +56,7 @@ const PatientDashboard = () => {
                 </div>
                 <p className="text-2xl font-bold text-foreground">{value}</p>
                 <p className="text-sm text-muted-foreground">{label} · {desc}</p>
+                {onClick && <p className="text-xs text-primary mt-1">Clique para ver →</p>}
               </CardContent>
             </Card>
           ))}
