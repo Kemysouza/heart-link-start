@@ -325,27 +325,27 @@ const FindPsychologists = () => {
                     const status = getSlotStatus(day, hour);
                     const isPast = day < new Date() && !(day.toDateString() === new Date().toDateString() && hour >= new Date().getHours());
 
+                    const isSelected = selectedSlot && selectedSlot.date.toISOString() === day.toISOString() && selectedSlot.hour === hour;
+
                     return (
                       <button
                         key={i}
-                        disabled={status !== "free" || isPast || booking}
-                        onClick={() => handleBook(day, hour)}
+                        disabled={status === "busy" || isPast}
+                        onClick={() => handleSlotClick(day, hour)}
                         className={`p-2 text-xs text-center transition-colors ${
-                          status === "free" && !isPast
-                            ? "bg-yellow-400/30 hover:bg-yellow-400/60 cursor-pointer border-yellow-500/30"
+                          isSelected
+                            ? "bg-primary/30 ring-2 ring-primary cursor-pointer"
+                            : status === "free" && !isPast
+                            ? "bg-yellow-400/30 hover:bg-yellow-400/60 cursor-pointer"
                             : status === "busy"
-                            ? "bg-red-400/30 border-red-500/30 cursor-not-allowed"
+                            ? "bg-red-400/30 cursor-not-allowed"
                             : "bg-card cursor-default"
                         }`}
-                        title={
-                          status === "free" && !isPast
-                            ? "Clique para agendar"
-                            : status === "busy"
-                            ? "Horário ocupado"
-                            : "Sem disponibilidade"
-                        }
                       >
-                        {status === "free" && !isPast && (
+                        {isSelected && (
+                          <span className="text-primary font-semibold">✓ Selecionado</span>
+                        )}
+                        {!isSelected && status === "free" && !isPast && (
                           <span className="text-yellow-700 dark:text-yellow-300 font-medium">Livre</span>
                         )}
                         {status === "busy" && (
@@ -358,6 +358,24 @@ const FindPsychologists = () => {
               ))}
             </div>
           </div>
+
+          {/* Confirmation bar */}
+          {selectedSlot && (
+            <div className="mt-4 p-4 rounded-lg border bg-accent/50">
+              <p className="text-sm text-foreground mb-3">
+                Você confirma este horário com o profissional <strong>{selectedPsych?.nome_completo}</strong> no dia{" "}
+                <strong>{formatDateFull(selectedSlot.date)}</strong> às <strong>{selectedSlot.hour}:00</strong>?
+              </p>
+              <div className="flex gap-3">
+                <Button onClick={handleConfirmBooking} disabled={booking}>
+                  {booking ? "Agendando..." : "Sim, confirmar"}
+                </Button>
+                <Button variant="outline" onClick={() => setSelectedSlot(null)}>
+                  Não, cancelar
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
