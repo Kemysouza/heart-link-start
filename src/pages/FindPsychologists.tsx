@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, ArrowLeft, User, Award, Briefcase, Calendar } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Brain, ArrowLeft, User, Award, Briefcase, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface PsychologistInfo {
@@ -16,12 +17,39 @@ interface PsychologistInfo {
   especializacoes: string[] | null;
 }
 
+interface AvailabilitySlot {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
+
+interface Appointment {
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
+}
+
+const HOURS = Array.from({ length: 12 }, (_, i) => i + 7); // 7h - 18h
+const DAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
 const FindPsychologists = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [psychologists, setPsychologists] = useState<PsychologistInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [linking, setLinking] = useState<string | null>(null);
+
+  // Calendar state
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedPsych, setSelectedPsych] = useState<PsychologistInfo | null>(null);
+  const [weekStart, setWeekStart] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay() + 1); // Monday
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [booking, setBooking] = useState(false);
 
   useEffect(() => {
     fetchPsychologists();
@@ -29,80 +57,142 @@ const FindPsychologists = () => {
 
   const fetchPsychologists = async () => {
     try {
-      // Fetch all psychologist profiles
       const { data: psychProfiles, error: psychError } = await supabase
         .from("psychologist_profiles")
         .select("user_id, crp, trajetoria_profissional, especializacoes");
-
       if (psychError) throw psychError;
-
       if (!psychProfiles || psychProfiles.length === 0) {
         setPsychologists([]);
         setLoading(false);
         return;
       }
-
-      // For each psychologist, get their name from profiles
       const userIds = psychProfiles.map((p) => p.user_id);
-      const { data: profiles, error: profileError } = await supabase
+      const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, nome_completo")
         .in("user_id", userIds);
-
-      if (profileError) throw profileError;
-
       const profileMap = new Map(profiles?.map((p) => [p.user_id, p.nome_completo]) || []);
-
-      const combined: PsychologistInfo[] = psychProfiles.map((pp) => ({
-        user_id: pp.user_id,
-        nome_completo: profileMap.get(pp.user_id) || null,
-        crp: pp.crp,
-        trajetoria_profissional: pp.trajetoria_profissional,
-        especializacoes: pp.especializacoes,
-      }));
-
-      setPsychologists(combined);
-    } catch (err) {
-      console.error(err);
+      setPsychologists(
+        psychProfiles.map((pp) => ({
+          user_id: pp.user_id,
+          nome_completo: profileMap.get(pp.user_id) || null,
+          crp: pp.crp,
+          trajetoria_profissional: pp.trajetoria_profissional,
+          especializacoes: pp.especializacoes,
+        }))
+      );
+    } catch {
       toast({ title: "Erro ao carregar psicólogos", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChoose = async (psychologistId: string) => {
-    if (!user) return;
-    setLinking(psychologistId);
+  const openCalendar = async (psych: PsychologistInfo) => {
+    setSelectedPsych(psych);
+    setCalendarOpen(true);
+    await fetchCalendarData(psych.user_id);
+  };
+
+  const fetchCalendarData = async (psychId: string) => {
+    const [slotsRes, apptRes] = await Promise.all([
+      supabase
+        .from("availability_slots")
+        .select("day_of_week, start_time, end_time")
+        .eq("psychologist_id", psychId)
+        .eq("is_available", true),
+      supabase
+        .from("appointments")
+        .select("appointment_date, start_time, end_time")
+        .eq("psychologist_id", psychId)
+        .in("status", ["agendado", "confirmado"]),
+    ]);
+    setSlots((slotsRes.data as AvailabilitySlot[]) || []);
+    setAppointments((apptRes.data as Appointment[]) || []);
+  };
+
+  const changeWeek = (delta: number) => {
+    setWeekStart((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + delta * 7);
+      return d;
+    });
+  };
+
+  const getWeekDays = () => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+  };
+
+  const getSlotStatus = (date: Date, hour: number): "free" | "busy" | "none" => {
+    const dayOfWeek = date.getDay();
+    const timeStr = `${String(hour).padStart(2, "0")}:00:00`;
+    const nextTimeStr = `${String(hour + 1).padStart(2, "0")}:00:00`;
+
+    // Check if there's an available slot for this day/hour
+    const hasSlot = slots.some(
+      (s) => s.day_of_week === dayOfWeek && s.start_time <= timeStr && s.end_time > timeStr
+    );
+
+    if (!hasSlot) return "none";
+
+    // Check if there's an appointment booked
+    const dateStr = date.toISOString().split("T")[0];
+    const isBusy = appointments.some(
+      (a) => a.appointment_date === dateStr && a.start_time <= timeStr && a.end_time > timeStr
+    );
+
+    return isBusy ? "busy" : "free";
+  };
+
+  const handleBook = async (date: Date, hour: number) => {
+    if (!user || !selectedPsych) return;
+    const status = getSlotStatus(date, hour);
+    if (status !== "free") return;
+
+    setBooking(true);
     try {
-      // Check if already linked
+      // Also link patient to psychologist if not already
       const { data: existing } = await supabase
         .from("psychologist_patients")
         .select("id")
-        .eq("psychologist_id", psychologistId)
+        .eq("psychologist_id", selectedPsych.user_id)
         .eq("patient_id", user.id)
         .maybeSingle();
 
-      if (existing) {
-        toast({ title: "Você já está vinculado a este profissional" });
-        setLinking(null);
-        return;
+      if (!existing) {
+        await supabase.from("psychologist_patients").insert({
+          psychologist_id: selectedPsych.user_id,
+          patient_id: user.id,
+        });
       }
 
-      const { error } = await supabase.from("psychologist_patients").insert({
-        psychologist_id: psychologistId,
+      const dateStr = date.toISOString().split("T")[0];
+      const { error } = await supabase.from("appointments").insert({
+        psychologist_id: selectedPsych.user_id,
         patient_id: user.id,
+        appointment_date: dateStr,
+        start_time: `${String(hour).padStart(2, "0")}:00:00`,
+        end_time: `${String(hour + 1).padStart(2, "0")}:00:00`,
       });
 
       if (error) throw error;
 
-      toast({ title: "Vinculado com sucesso!", description: "Você agora pode agendar consultas com este profissional." });
+      toast({ title: "Consulta agendada!", description: `${dateStr} às ${hour}:00` });
+      await fetchCalendarData(selectedPsych.user_id);
     } catch (err) {
       console.error(err);
-      toast({ title: "Erro ao vincular", variant: "destructive" });
+      toast({ title: "Erro ao agendar", variant: "destructive" });
     } finally {
-      setLinking(null);
+      setBooking(false);
     }
   };
+
+  const weekDays = getWeekDays();
+  const formatDate = (d: Date) => `${d.getDate()}/${d.getMonth() + 1}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -128,7 +218,7 @@ const FindPsychologists = () => {
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-6 animate-fade-in">
           <h1 className="text-2xl font-bold text-foreground">Psicólogos Cadastrados</h1>
-          <p className="text-muted-foreground mt-1">Escolha um profissional para iniciar seu acompanhamento</p>
+          <p className="text-muted-foreground mt-1">Escolha um profissional e agende sua consulta</p>
         </div>
 
         {loading ? (
@@ -137,7 +227,6 @@ const FindPsychologists = () => {
           <div className="text-center py-12 text-muted-foreground">
             <User className="w-16 h-16 mx-auto mb-4 opacity-30" />
             <p className="text-lg">Nenhum psicólogo cadastrado ainda</p>
-            <p className="text-sm">Novos profissionais aparecerão aqui</p>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up">
@@ -149,9 +238,7 @@ const FindPsychologists = () => {
                       <User className="w-6 h-6 text-accent-foreground" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground text-lg">
-                        {psych.nome_completo || "Profissional"}
-                      </h3>
+                      <h3 className="font-semibold text-foreground text-lg">{psych.nome_completo || "Profissional"}</h3>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Award className="w-3.5 h-3.5" />
                         <span>CRP: {psych.crp}</span>
@@ -164,9 +251,7 @@ const FindPsychologists = () => {
                       <p className="text-xs font-medium text-muted-foreground mb-2">Especializações</p>
                       <div className="flex flex-wrap gap-1.5">
                         {psych.especializacoes.map((esp, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">
-                            {esp}
-                          </Badge>
+                          <Badge key={i} variant="secondary" className="text-xs">{esp}</Badge>
                         ))}
                       </div>
                     </div>
@@ -182,20 +267,9 @@ const FindPsychologists = () => {
                     </div>
                   )}
 
-                  <div className="mb-4">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                      <p className="text-xs font-medium text-muted-foreground">Agenda</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground italic">Disponível para agendamento</p>
-                  </div>
-
-                  <Button
-                    className="w-full"
-                    onClick={() => handleChoose(psych.user_id)}
-                    disabled={linking === psych.user_id}
-                  >
-                    {linking === psych.user_id ? "Vinculando..." : "Escolher Profissional"}
+                  <Button className="w-full" onClick={() => openCalendar(psych)}>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Agendar Consulta
                   </Button>
                 </CardContent>
               </Card>
@@ -203,6 +277,105 @@ const FindPsychologists = () => {
           </div>
         )}
       </main>
+
+      {/* Calendar Dialog */}
+      <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              Agenda — {selectedPsych?.nome_completo || "Profissional"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Week navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <Button variant="outline" size="sm" onClick={() => changeWeek(-1)}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="font-medium text-foreground">
+              {formatDate(weekDays[0])} — {formatDate(weekDays[6])}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => changeWeek(1)}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Legend */}
+          <div className="flex gap-4 mb-3 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-yellow-400/80 border border-yellow-500" />
+              <span className="text-muted-foreground">Disponível</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-red-400/80 border border-red-500" />
+              <span className="text-muted-foreground">Ocupado</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-muted border border-border" />
+              <span className="text-muted-foreground">Sem horário</span>
+            </div>
+          </div>
+
+          {/* Calendar grid */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[600px]">
+              {/* Header row */}
+              <div className="grid grid-cols-8 gap-px bg-border rounded-t-lg overflow-hidden">
+                <div className="bg-card p-2 text-xs font-medium text-muted-foreground text-center">Hora</div>
+                {weekDays.map((day, i) => (
+                  <div key={i} className="bg-card p-2 text-center">
+                    <p className="text-xs font-semibold text-foreground">{DAY_NAMES[day.getDay()]}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(day)}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Time rows */}
+              {HOURS.map((hour) => (
+                <div key={hour} className="grid grid-cols-8 gap-px bg-border">
+                  <div className="bg-card p-2 text-xs text-muted-foreground text-center font-mono">
+                    {String(hour).padStart(2, "0")}:00
+                  </div>
+                  {weekDays.map((day, i) => {
+                    const status = getSlotStatus(day, hour);
+                    const isPast = day < new Date() && !(day.toDateString() === new Date().toDateString() && hour >= new Date().getHours());
+
+                    return (
+                      <button
+                        key={i}
+                        disabled={status !== "free" || isPast || booking}
+                        onClick={() => handleBook(day, hour)}
+                        className={`p-2 text-xs text-center transition-colors ${
+                          status === "free" && !isPast
+                            ? "bg-yellow-400/30 hover:bg-yellow-400/60 cursor-pointer border-yellow-500/30"
+                            : status === "busy"
+                            ? "bg-red-400/30 border-red-500/30 cursor-not-allowed"
+                            : "bg-card cursor-default"
+                        }`}
+                        title={
+                          status === "free" && !isPast
+                            ? "Clique para agendar"
+                            : status === "busy"
+                            ? "Horário ocupado"
+                            : "Sem disponibilidade"
+                        }
+                      >
+                        {status === "free" && !isPast && (
+                          <span className="text-yellow-700 dark:text-yellow-300 font-medium">Livre</span>
+                        )}
+                        {status === "busy" && (
+                          <span className="text-red-700 dark:text-red-300 font-medium">Ocupado</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_date: string
+          created_at: string
+          end_time: string
+          id: string
+          patient_id: string
+          psychologist_id: string
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          created_at?: string
+          end_time: string
+          id?: string
+          patient_id: string
+          psychologist_id: string
+          start_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          patient_id?: string
+          psychologist_id?: string
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      availability_slots: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_available: boolean
+          psychologist_id: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_available?: boolean
+          psychologist_id: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_available?: boolean
+          psychologist_id?: string
+          start_time?: string
+        }
+        Relationships: []
+      }
       consultations: {
         Row: {
           created_at: string
