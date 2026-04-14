@@ -43,6 +43,8 @@ const FindPsychologists = () => {
   });
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [booking, setBooking] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<{ date: Date; hour: number } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     fetchPsychologists();
@@ -123,14 +125,22 @@ const FindPsychologists = () => {
     return isBusy ? "busy" : "free";
   };
 
-  const handleBook = async (date: Date, hour: number) => {
-    if (!user || !selectedPsych) return;
+  const handleSlotClick = (date: Date, hour: number) => {
     const status = getSlotStatus(date, hour);
-    if (status !== "free") return;
+    if (status === "busy") return;
 
+    // Toggle selection: click again to deselect
+    if (selectedSlot && selectedSlot.date.toISOString() === date.toISOString() && selectedSlot.hour === hour) {
+      setSelectedSlot(null);
+      return;
+    }
+    setSelectedSlot({ date, hour });
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!user || !selectedPsych || !selectedSlot) return;
     setBooking(true);
     try {
-      // Also link patient to psychologist if not already
       const { data: existing } = await supabase
         .from("psychologist_patients")
         .select("id")
@@ -145,18 +155,20 @@ const FindPsychologists = () => {
         });
       }
 
-      const dateStr = date.toISOString().split("T")[0];
+      const dateStr = selectedSlot.date.toISOString().split("T")[0];
       const { error } = await supabase.from("appointments").insert({
         psychologist_id: selectedPsych.user_id,
         patient_id: user.id,
         appointment_date: dateStr,
-        start_time: `${String(hour).padStart(2, "0")}:00:00`,
-        end_time: `${String(hour + 1).padStart(2, "0")}:00:00`,
+        start_time: `${String(selectedSlot.hour).padStart(2, "0")}:00:00`,
+        end_time: `${String(selectedSlot.hour + 1).padStart(2, "0")}:00:00`,
       });
 
       if (error) throw error;
 
-      toast({ title: "Consulta agendada!", description: `${dateStr} às ${hour}:00` });
+      toast({ title: "Consulta agendada!", description: `${formatDateFull(selectedSlot.date)} às ${selectedSlot.hour}:00` });
+      setSelectedSlot(null);
+      setConfirmOpen(false);
       await fetchCalendarData(selectedPsych.user_id);
     } catch (err) {
       console.error(err);
