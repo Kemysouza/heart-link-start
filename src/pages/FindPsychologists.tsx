@@ -17,12 +17,6 @@ interface PsychologistInfo {
   especializacoes: string[] | null;
 }
 
-interface AvailabilitySlot {
-  day_of_week: number;
-  start_time: string;
-  end_time: string;
-}
-
 interface Appointment {
   appointment_date: string;
   start_time: string;
@@ -292,11 +286,6 @@ const FindPsychologists = () => {
               <div className="w-4 h-4 rounded bg-red-400/80 border border-red-500" />
               <span className="text-muted-foreground">Ocupado</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-muted border border-border" />
-              <span className="text-muted-foreground">Sem horário</span>
-            </div>
-          </div>
 
           {/* Calendar grid */}
           <div className="overflow-x-auto">
