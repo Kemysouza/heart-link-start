@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Brain, ArrowLeft, User, Award, Briefcase, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Brain, ArrowLeft, User, Award, Briefcase, Calendar, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface PsychologistInfo {
@@ -255,10 +255,16 @@ const FindPsychologists = () => {
                     </div>
                   )}
 
-                  <Button className="w-full" onClick={() => openCalendar(psych)}>
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Agendar Consulta
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button className="flex-1" onClick={() => openCalendar(psych)}>
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Agendar Consulta
+                    </Button>
+                    <Button variant="outline" className="flex-1" onClick={() => navigate(`/chat/${psych.user_id}`)}>
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Mensagem
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
