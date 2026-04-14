@@ -286,6 +286,7 @@ const FindPsychologists = () => {
               <div className="w-4 h-4 rounded bg-red-400/80 border border-red-500" />
               <span className="text-muted-foreground">Ocupado</span>
             </div>
+          </div>
 
           {/* Calendar grid */}
           <div className="overflow-x-auto">
