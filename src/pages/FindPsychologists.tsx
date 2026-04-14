@@ -47,7 +47,6 @@ const FindPsychologists = () => {
     d.setHours(0, 0, 0, 0);
     return d;
   });
-  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [booking, setBooking] = useState(false);
 
