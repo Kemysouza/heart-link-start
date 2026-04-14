@@ -180,6 +180,7 @@ const FindPsychologists = () => {
 
   const weekDays = getWeekDays();
   const formatDate = (d: Date) => `${d.getDate()}/${d.getMonth() + 1}`;
+  const formatDateFull = (d: Date) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 
   return (
     <div className="min-h-screen bg-background">
