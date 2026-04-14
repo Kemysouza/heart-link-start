@@ -17,12 +17,6 @@ interface PsychologistInfo {
   especializacoes: string[] | null;
 }
 
-interface AvailabilitySlot {
-  day_of_week: number;
-  start_time: string;
-  end_time: string;
-}
-
 interface Appointment {
   appointment_date: string;
   start_time: string;
@@ -47,7 +41,6 @@ const FindPsychologists = () => {
     d.setHours(0, 0, 0, 0);
     return d;
   });
-  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [booking, setBooking] = useState(false);
 
@@ -95,20 +88,12 @@ const FindPsychologists = () => {
   };
 
   const fetchCalendarData = async (psychId: string) => {
-    const [slotsRes, apptRes] = await Promise.all([
-      supabase
-        .from("availability_slots")
-        .select("day_of_week, start_time, end_time")
-        .eq("psychologist_id", psychId)
-        .eq("is_available", true),
-      supabase
-        .from("appointments")
-        .select("appointment_date, start_time, end_time")
-        .eq("psychologist_id", psychId)
-        .in("status", ["agendado", "confirmado"]),
-    ]);
-    setSlots((slotsRes.data as AvailabilitySlot[]) || []);
-    setAppointments((apptRes.data as Appointment[]) || []);
+    const { data } = await supabase
+      .from("appointments")
+      .select("appointment_date, start_time, end_time")
+      .eq("psychologist_id", psychId)
+      .in("status", ["agendado", "confirmado"]);
+    setAppointments((data as Appointment[]) || []);
   };
 
   const changeWeek = (delta: number) => {
@@ -127,20 +112,10 @@ const FindPsychologists = () => {
     });
   };
 
-  const getSlotStatus = (date: Date, hour: number): "free" | "busy" | "none" => {
-    const dayOfWeek = date.getDay();
+  const getSlotStatus = (date: Date, hour: number): "free" | "busy" => {
     const timeStr = `${String(hour).padStart(2, "0")}:00:00`;
-    const nextTimeStr = `${String(hour + 1).padStart(2, "0")}:00:00`;
-
-    // Check if there's an available slot for this day/hour
-    const hasSlot = slots.some(
-      (s) => s.day_of_week === dayOfWeek && s.start_time <= timeStr && s.end_time > timeStr
-    );
-
-    if (!hasSlot) return "none";
-
-    // Check if there's an appointment booked
     const dateStr = date.toISOString().split("T")[0];
+
     const isBusy = appointments.some(
       (a) => a.appointment_date === dateStr && a.start_time <= timeStr && a.end_time > timeStr
     );
@@ -310,10 +285,6 @@ const FindPsychologists = () => {
             <div className="flex items-center gap-1.5">
               <div className="w-4 h-4 rounded bg-red-400/80 border border-red-500" />
               <span className="text-muted-foreground">Ocupado</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-muted border border-border" />
-              <span className="text-muted-foreground">Sem horário</span>
             </div>
           </div>
 
