@@ -38,31 +38,33 @@ const PatientOnboarding = () => {
         .from("profiles")
         .update({ nome_completo: nomeCompleto, telefone, onboarding_completed: true })
         .eq("user_id", user.id);
-
       if (profileError) throw profileError;
 
       const { error: patientError } = await supabase
         .from("patient_profiles")
-        .insert({
-          user_id: user.id,
-          data_nascimento: dataNascimento || null,
-          genero,
-          estado_civil: estadoCivil,
-          profissao,
-          queixa_principal: queixaPrincipal,
-          historico_familiar: historicoFamiliar,
-          medicamentos,
-          tratamentos_anteriores: tratamentosAnteriores,
-          expectativas,
-        });
-
+        .upsert(
+          {
+            user_id: user.id,
+            data_nascimento: dataNascimento || null,
+            genero: genero || null,
+            estado_civil: estadoCivil || null,
+            profissao: profissao || null,
+            queixa_principal: queixaPrincipal || null,
+            historico_familiar: historicoFamiliar || null,
+            medicamentos: medicamentos || null,
+            tratamentos_anteriores: tratamentosAnteriores || null,
+            expectativas: expectativas || null,
+          },
+          { onConflict: "user_id" },
+        );
       if (patientError) throw patientError;
 
       await refreshProfile();
       toast.success("Cadastro concluído!");
       navigate("/dashboard/paciente");
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao salvar dados");
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Erro ao salvar dados";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -104,11 +106,11 @@ const PatientOnboarding = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Telefone</Label>
-                  <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(11) 99999-9999" />
+                  <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(11) 99999-9999" inputMode="tel" />
                 </div>
                 <div className="space-y-2">
                   <Label>Data de Nascimento</Label>
-                  <Input type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} />
+                  <Input type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} max={new Date().toISOString().slice(0, 10)} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -140,7 +142,11 @@ const PatientOnboarding = () => {
                   <Label>Profissão</Label>
                   <Input value={profissao} onChange={(e) => setProfissao(e.target.value)} placeholder="Sua profissão" />
                 </div>
-                <Button onClick={() => setStep(2)} className="w-full gradient-primary text-primary-foreground" disabled={!nomeCompleto}>
+                <Button
+                  onClick={() => setStep(2)}
+                  className="w-full gradient-primary text-primary-foreground"
+                  disabled={!nomeCompleto.trim()}
+                >
                   Próximo <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -150,11 +156,11 @@ const PatientOnboarding = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Queixa Principal</Label>
-                  <Textarea value={queixaPrincipal} onChange={(e) => setQueixaPrincipal(e.target.value)} placeholder="O que te trouxe aqui? Descreva como tem se sentido..." rows={3} />
+                  <Textarea value={queixaPrincipal} onChange={(e) => setQueixaPrincipal(e.target.value)} placeholder="O que te trouxe aqui? Descreva como tem se sentido..." rows={3} maxLength={2000} />
                 </div>
                 <div className="space-y-2">
                   <Label>Histórico Familiar</Label>
-                  <Textarea value={historicoFamiliar} onChange={(e) => setHistoricoFamiliar(e.target.value)} placeholder="Há histórico de problemas psicológicos na família?" rows={2} />
+                  <Textarea value={historicoFamiliar} onChange={(e) => setHistoricoFamiliar(e.target.value)} placeholder="Há histórico de problemas psicológicos na família?" rows={2} maxLength={2000} />
                 </div>
                 <div className="space-y-2">
                   <Label>Medicamentos em uso</Label>
@@ -162,17 +168,24 @@ const PatientOnboarding = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Tratamentos Anteriores</Label>
-                  <Textarea value={tratamentosAnteriores} onChange={(e) => setTratamentosAnteriores(e.target.value)} placeholder="Já fez terapia ou tratamento psicológico antes?" rows={2} />
+                  <Textarea value={tratamentosAnteriores} onChange={(e) => setTratamentosAnteriores(e.target.value)} placeholder="Já fez terapia ou tratamento psicológico antes?" rows={2} maxLength={2000} />
                 </div>
                 <div className="space-y-2">
                   <Label>Expectativas</Label>
-                  <Textarea value={expectativas} onChange={(e) => setExpectativas(e.target.value)} placeholder="O que espera alcançar com o acompanhamento?" rows={2} />
+                  <Textarea value={expectativas} onChange={(e) => setExpectativas(e.target.value)} placeholder="O que espera alcançar com o acompanhamento?" rows={2} maxLength={2000} />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Os dados clínicos são confidenciais e visíveis apenas para o(s) psicólogo(s) com quem você se vincular.
+                </p>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
                     <ArrowLeft className="mr-2 w-4 h-4" /> Voltar
                   </Button>
-                  <Button onClick={handleSubmit} className="flex-1 gradient-primary text-primary-foreground" disabled={isLoading}>
+                  <Button
+                    onClick={handleSubmit}
+                    className="flex-1 gradient-primary text-primary-foreground"
+                    disabled={isLoading}
+                  >
                     {isLoading ? "Salvando..." : "Concluir Cadastro"}
                   </Button>
                 </div>
