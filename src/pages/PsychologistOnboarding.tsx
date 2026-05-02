@@ -12,19 +12,12 @@ import { toast } from "sonner";
 import { Brain, ArrowRight, ArrowLeft } from "lucide-react";
 
 const ESPECIALIDADES = [
-  "Depressão",
-  "Ansiedade",
-  "Luto",
-  "Transtornos Alimentares",
-  "Terapia de Casal",
-  "Psicologia Infantil",
-  "TDAH",
-  "Trauma e TEPT",
-  "Dependência Química",
-  "Autoestima",
-  "Estresse",
-  "Fobias",
+  "Depressão", "Ansiedade", "Luto", "Transtornos Alimentares",
+  "Terapia de Casal", "Psicologia Infantil", "TDAH", "Trauma e TEPT",
+  "Dependência Química", "Autoestima", "Estresse", "Fobias",
 ];
+
+const CRP_REGEX = /^\d{2}\/\d{4,6}$/;
 
 const PsychologistOnboarding = () => {
   const { user, refreshProfile } = useAuth();
@@ -40,37 +33,44 @@ const PsychologistOnboarding = () => {
 
   const toggleEspecialidade = (esp: string) => {
     setEspecialidades((prev) =>
-      prev.includes(esp) ? prev.filter((e) => e !== esp) : [...prev, esp]
+      prev.includes(esp) ? prev.filter((e) => e !== esp) : [...prev, esp],
     );
   };
 
   const handleSubmit = async () => {
     if (!user) return;
+    if (!CRP_REGEX.test(crp)) {
+      toast.error("CRP inválido. Use o formato XX/NNNNNN, ex: 06/123456");
+      setStep(1);
+      return;
+    }
     setIsLoading(true);
     try {
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ nome_completo: nomeCompleto, telefone, onboarding_completed: true })
         .eq("user_id", user.id);
-
       if (profileError) throw profileError;
 
       const { error: psychError } = await supabase
         .from("psychologist_profiles")
-        .insert({
-          user_id: user.id,
-          crp,
-          trajetoria_profissional: trajetoria,
-          especializacoes: especialidades,
-        });
-
+        .upsert(
+          {
+            user_id: user.id,
+            crp,
+            trajetoria_profissional: trajetoria,
+            especializacoes: especialidades,
+          },
+          { onConflict: "user_id" },
+        );
       if (psychError) throw psychError;
 
       await refreshProfile();
       toast.success("Cadastro concluído!");
       navigate("/dashboard/psicologo");
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao salvar dados");
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Erro ao salvar dados";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -118,13 +118,24 @@ const PsychologistOnboarding = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Telefone</Label>
-                  <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(11) 99999-9999" />
+                  <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(11) 99999-9999" inputMode="tel" />
                 </div>
                 <div className="space-y-2">
                   <Label>CRP</Label>
-                  <Input value={crp} onChange={(e) => setCrp(e.target.value)} placeholder="Ex: 06/123456" />
+                  <Input value={crp} onChange={(e) => setCrp(e.target.value)} placeholder="06/123456" />
+                  <p className="text-xs text-muted-foreground">Formato: UF/Nº — ex: 06/123456</p>
                 </div>
-                <Button onClick={() => setStep(2)} className="w-full gradient-primary text-primary-foreground" disabled={!nomeCompleto || !crp}>
+                <Button
+                  onClick={() => {
+                    if (!CRP_REGEX.test(crp)) {
+                      toast.error("CRP inválido. Use o formato XX/NNNNNN");
+                      return;
+                    }
+                    setStep(2);
+                  }}
+                  className="w-full gradient-primary text-primary-foreground"
+                  disabled={!nomeCompleto.trim() || !crp}
+                >
                   Próximo <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -139,7 +150,9 @@ const PsychologistOnboarding = () => {
                     onChange={(e) => setTrajetoria(e.target.value)}
                     placeholder="Conte sobre sua formação, experiência e abordagem terapêutica..."
                     rows={6}
+                    maxLength={2000}
                   />
+                  <p className="text-xs text-muted-foreground">{trajetoria.length}/2000</p>
                 </div>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep(1)} className="flex-1">

@@ -1,26 +1,53 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
-    <title>Lovable App</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <!-- TODO: Update og:title to match your application name -->
-    <meta property="og:title" content="Lovable App" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <!-- Cache busting do HTML para evitar versão antiga em mobile/CDN -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <title>MindCare — Saúde Mental Online</title>
+    <meta name="description" content="Plataforma de acompanhamento psicológico online. Conectamos pacientes a profissionais." />
+    <meta name="theme-color" content="#33A48E" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:title" content="MindCare — Saúde Mental Online" />
+    <meta property="og:description" content="Plataforma de acompanhamento psicológico online." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="/favicon.ico" />
   </head>
 
   <body>
     <div id="root"></div>
+
+    <!--
+      Kill switch defensivo: se algum service worker antigo (de uma versão
+      anterior, mesmo que esta versão não use SW) ficou registrado em
+      celulares, ele força a desregistrar e limpar caches no carregamento.
+      Pode remover quando todos os usuários tiverem aberto o app ao menos
+      uma vez após este deploy.
+    -->
+    <script>
+      (async () => {
+        try {
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const r of regs) await r.unregister();
+          }
+          if (window.caches && caches.keys) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((k) => caches.delete(k)));
+          }
+        } catch (_) { /* silencioso */ }
+      })();
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
